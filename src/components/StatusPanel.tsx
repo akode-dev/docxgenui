@@ -14,9 +14,10 @@ export type LocalStatus =
 
 interface StatusPanelProps {
   status: LocalStatus;
+  onOpenLogs: () => void;
 }
 
-export function StatusPanel({ status }: StatusPanelProps) {
+export function StatusPanel({ status, onOpenLogs }: StatusPanelProps) {
   if (status.kind === "idle") {
     return (
       <aside className="status-panel status-idle" aria-live="polite">
@@ -42,15 +43,16 @@ export function StatusPanel({ status }: StatusPanelProps) {
         <div>
           <strong>{status.message}</strong>
           {status.hint ? <span>{status.hint}</span> : null}
+          <button className="status-link" type="button" onClick={onOpenLogs}>
+            Open diagnostic logs
+          </button>
         </div>
       </aside>
     );
   }
 
   const { result } = status;
-  const warnings = result.diagnostics.filter(
-    (diagnostic) => diagnostic.severity === "warning",
-  );
+  const diagnostics = result.diagnostics;
   return (
     <aside
       className={`status-panel ${result.ok ? "status-success" : "status-error"}`}
@@ -63,21 +65,36 @@ export function StatusPanel({ status }: StatusPanelProps) {
           <span className="result-path">{result.outputPath}</span>
         ) : null}
         {result.hint ? <span>{result.hint}</span> : null}
-        {warnings.length > 0 ? (
-          <details>
+        {result.errorCode ? (
+          <span className="error-code">Error code: {result.errorCode}</span>
+        ) : null}
+        {diagnostics.length > 0 ? (
+          <details open={!result.ok}>
             <summary>
-              <AlertTriangle size={15} />
-              {warnings.length} warning{warnings.length === 1 ? "" : "s"}
+              {result.ok ? (
+                <AlertTriangle size={15} />
+              ) : (
+                <AlertCircle size={15} />
+              )}
+              {diagnostics.length} diagnostic
+              {diagnostics.length === 1 ? "" : "s"}
             </summary>
             <ul className="diagnostic-list">
-              {warnings.map((warning) => (
-                <li key={`${warning.code}-${warning.path ?? warning.message}`}>
-                  <code>{warning.code}</code>
-                  <span>{warning.message}</span>
+              {diagnostics.map((diagnostic) => (
+                <li
+                  key={`${diagnostic.code}-${diagnostic.path ?? diagnostic.message}`}
+                >
+                  <code>{diagnostic.code}</code>
+                  <span>{diagnostic.message}</span>
                 </li>
               ))}
             </ul>
           </details>
+        ) : null}
+        {!result.ok ? (
+          <button className="status-link" type="button" onClick={onOpenLogs}>
+            Open diagnostic logs
+          </button>
         ) : null}
       </div>
       <span className="duration">{result.durationMilliseconds} ms</span>

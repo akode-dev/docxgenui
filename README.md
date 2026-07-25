@@ -23,8 +23,10 @@ document upload.
 - **Safe by default:** no remote images or raw HTML; existing output files are
   not overwritten unless the user explicitly enables it.
 
-The document engine is the open-source
-[`Akode.DocxGen`](https://www.nuget.org/packages/Akode.DocxGen) package.
+The application is powered by the open-source
+[`akode-dev/docxgen`](https://github.com/akode-dev/docxgen) engine, published
+for .NET applications as the
+[`Akode.DocxGen`](https://www.nuget.org/packages/Akode.DocxGen) NuGet package.
 
 ## Download
 
@@ -41,6 +43,22 @@ Rust, the .NET SDK, Microsoft Word, or LibreOffice.
 > The first public builds are unsigned. Windows SmartScreen and macOS Gatekeeper
 > may therefore show an unverified-publisher warning. Code signing is tracked as
 > a release-hardening follow-up.
+
+## Diagnostics
+
+Every backend operation writes a small local JSON-lines log. Choose **Open
+logs** in the application footer or next to an error to open its folder. The
+log records operation names, duration, success state, and diagnostic codes. It
+does not record document contents, file names, file paths, template data, or
+personal fields.
+
+The active log is `docxgen-ui.log`; after 1 MB it is rotated once to
+`docxgen-ui.previous.log`. Default locations are:
+
+- Windows: `%LOCALAPPDATA%\eu.akode.docxgenui\logs`
+- macOS: `~/Library/Logs/eu.akode.docxgenui`
+- Linux: `~/.local/share/eu.akode.docxgenui/logs` (or the platform
+  `XDG_DATA_HOME` equivalent)
 
 ## Using a Word template
 
@@ -63,8 +81,8 @@ Example JSON:
     "Title": "Platform handbook",
     "Description": "Operational guidance",
     "Author": {
-      "FirstName": "Andrei",
-      "LastName": "Kaliada"
+      "FirstName": "Sample",
+      "LastName": "Author"
     }
   }
 }
@@ -99,5 +117,9 @@ and [release process](docs/release.md) for details.
 Issues and focused pull requests are welcome. Read
 [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and the
 [Code of Conduct](CODE_OF_CONDUCT.md) first.
+
+The desktop source and issue tracker live in
+[`akode-dev/docxgenui`](https://github.com/akode-dev/docxgenui); engine issues
+belong in [`akode-dev/docxgen`](https://github.com/akode-dev/docxgen).
 
 DocxGen UI is licensed under the [MIT License](LICENSE).

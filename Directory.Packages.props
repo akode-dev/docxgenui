@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup Label="Product">
-    <PackageVersion Include="Akode.DocxGen" Version="2.1.1" />
+    <PackageVersion Include="Akode.DocxGen" Version="2.1.2" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">

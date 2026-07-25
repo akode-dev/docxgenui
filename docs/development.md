@@ -76,8 +76,12 @@ The Tauri command sends:
 
 The .NET executable receives it through
 `--request <base64url-json>` and writes exactly one response object to stdout.
-Keep stdout machine-readable; operational logs, if ever added, belong on
-stderr.
+Keep stdout machine-readable. The Rust bridge writes privacy-safe operational
+metadata to the platform application log directory and deliberately excludes
+the request payload, response messages, document names, paths, and contents.
+
+Use **Open logs** in the desktop footer while testing. The current file is
+`docxgen-ui.log` and one rotated `docxgen-ui.previous.log` is retained.
 
 ## Tests
 

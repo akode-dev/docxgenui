@@ -15,7 +15,12 @@ import {
 import { FilePicker } from "./components/FilePicker";
 import { StatusPanel, type LocalStatus } from "./components/StatusPanel";
 import { TemplateSummary } from "./components/TemplateSummary";
-import { runBackend } from "./lib/backend";
+import {
+  getLogInfo,
+  openLogFolder,
+  openProjectPage,
+  runBackend,
+} from "./lib/backend";
 import {
   pickDirectory,
   pickFile,
@@ -28,6 +33,7 @@ import type {
   ExtractionData,
   HealthData,
   InspectionData,
+  LogInfo,
   RenderData,
   SelectedFile,
 } from "./types";
@@ -43,6 +49,7 @@ function App() {
   const [workspace, setWorkspace] = useState<Workspace>("create");
   const [createMode, setCreateMode] = useState<CreateMode>("quick");
   const [health, setHealth] = useState<HealthData | null>(null);
+  const [logInfo, setLogInfo] = useState<LogInfo | null>(null);
   const [status, setStatus] = useState<LocalStatus>({
     kind: "idle",
     message: "Choose your files. Documents stay on this device.",
@@ -70,15 +77,31 @@ function App() {
 
   useEffect(() => {
     let active = true;
+    void getLogInfo()
+      .then((info) => {
+        if (active) {
+          setLogInfo(info);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setLogInfo(null);
+        }
+      });
     void runBackend<HealthData>("health")
       .then((response) => {
         if (active && response.ok && response.data) {
           setHealth(response.data);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (active) {
           setHealth(null);
+          setStatus({
+            kind: "error",
+            message: "The document engine could not start.",
+            hint: bridgeErrorMessage(error),
+          });
         }
       });
     return () => {
@@ -129,11 +152,11 @@ function App() {
       if (response.ok && response.data) {
         setInspection(response.data);
       }
-    } catch {
+    } catch (error: unknown) {
       setStatus({
         kind: "error",
         message: "Could not reach the document backend.",
-        hint: "Restart the application and try inspecting the template again.",
+        hint: bridgeErrorMessage(error),
       });
     }
   }
@@ -234,11 +257,11 @@ function App() {
         });
       }
       setStatus({ kind: "result", result: response });
-    } catch {
+    } catch (error: unknown) {
       setStatus({
         kind: "error",
         message: "The desktop bridge did not return a result.",
-        hint: "Restart DocxGen UI. Your source files were not modified.",
+        hint: bridgeErrorMessage(error),
       });
     } finally {
       setBusy(false);
@@ -282,6 +305,30 @@ function App() {
           ? "Build a Word document locally from Markdown."
           : "Extract semantic Markdown and embedded images from Word.",
     });
+  }
+
+  async function showLogs() {
+    try {
+      await openLogFolder();
+    } catch (error: unknown) {
+      setStatus({
+        kind: "error",
+        message: "Could not open the diagnostic log folder.",
+        hint: bridgeErrorMessage(error),
+      });
+    }
+  }
+
+  async function showProject(project: "engine" | "desktop") {
+    try {
+      await openProjectPage(project);
+    } catch (error: unknown) {
+      setStatus({
+        kind: "error",
+        message: "Could not open the project page.",
+        hint: bridgeErrorMessage(error),
+      });
+    }
   }
 
   return (
@@ -679,7 +726,7 @@ function App() {
           </div>
 
           <footer className="action-footer">
-            <StatusPanel status={status} />
+            <StatusPanel status={status} onOpenLogs={() => void showLogs()} />
             <button
               className="primary-button"
               type="button"
@@ -694,12 +741,44 @@ function App() {
         </section>
 
         <footer className="app-footer">
-          <span>Powered by Akode.DocxGen · Offline by default</span>
+          <span>
+            Powered by{" "}
+            <button
+              className="footer-link"
+              type="button"
+              onClick={() => void showProject("engine")}
+            >
+              Akode.DocxGen
+            </button>{" "}
+            · Offline by default
+          </span>
+          <button
+            className="footer-link"
+            type="button"
+            title={logInfo?.filePath ?? "Local diagnostic log"}
+            onClick={() => void showLogs()}
+          >
+            Open logs
+          </button>
+          <button
+            className="footer-link"
+            type="button"
+            onClick={() => void showProject("desktop")}
+          >
+            Source &amp; issues
+          </button>
           <span>DOCX extraction preserves meaning, not page geometry.</span>
         </footer>
       </main>
     </div>
   );
+}
+
+function bridgeErrorMessage(error: unknown): string {
+  const detail = error instanceof Error ? error.message : String(error);
+  return detail.trim().length > 0
+    ? `${detail} Your source files were not modified.`
+    : "Restart DocxGen UI and try again. Your source files were not modified.";
 }
 
 export default App;
