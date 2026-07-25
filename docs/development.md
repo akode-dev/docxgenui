@@ -15,7 +15,8 @@ sudo apt-get install -y \
   libwebkit2gtk-4.1-dev \
   libappindicator3-dev \
   librsvg2-dev \
-  patchelf
+  patchelf \
+  xdg-utils
 ```
 
 ## Restore and verify
