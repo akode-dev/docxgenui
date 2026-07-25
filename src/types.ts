@@ -74,6 +74,11 @@ export interface BackendRequest {
   payload: Record<string, unknown>;
 }
 
+export interface LogInfo {
+  filePath: string;
+  directoryPath: string;
+}
+
 export interface SelectedFile {
   path: string;
   name: string;

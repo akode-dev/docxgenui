@@ -1,9 +1,17 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
-import { runBackend } from "./lib/backend";
+import {
+  getLogInfo,
+  openLogFolder,
+  openProjectPage,
+  runBackend,
+} from "./lib/backend";
 
 vi.mock("./lib/backend", () => ({
+  getLogInfo: vi.fn(),
+  openLogFolder: vi.fn(),
+  openProjectPage: vi.fn(),
   runBackend: vi.fn(),
 }));
 
@@ -16,10 +24,19 @@ vi.mock("./lib/files", () => ({
 }));
 
 const mockedRunBackend = vi.mocked(runBackend);
+const mockedGetLogInfo = vi.mocked(getLogInfo);
+const mockedOpenLogFolder = vi.mocked(openLogFolder);
+const mockedOpenProjectPage = vi.mocked(openProjectPage);
 
 describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedGetLogInfo.mockResolvedValue({
+      filePath: "C:\\Logs\\docxgen-ui.log",
+      directoryPath: "C:\\Logs",
+    });
+    mockedOpenLogFolder.mockResolvedValue();
+    mockedOpenProjectPage.mockResolvedValue();
     mockedRunBackend.mockResolvedValue({
       ok: true,
       operation: "health",
@@ -30,8 +47,8 @@ describe("App", () => {
       durationMilliseconds: 0,
       diagnostics: [],
       data: {
-        backendVersion: "0.1.0",
-        docxGenVersion: "2.1.1",
+        backendVersion: "0.1.1",
+        docxGenVersion: "2.1.2",
         runtime: ".NET 10",
         operatingSystem: "Test",
       },
@@ -55,7 +72,7 @@ describe("App", () => {
     ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText("Core 2.1.1")).toBeInTheDocument();
+      expect(screen.getByText("Core 2.1.2")).toBeInTheDocument();
     });
   });
 
@@ -74,5 +91,17 @@ describe("App", () => {
       screen.getByText("Choose the Word document to extract."),
     ).toBeInTheDocument();
     expect(mockedRunBackend).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens local logs and the DocxGen engine page through fixed native commands", async () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open logs" }));
+    fireEvent.click(screen.getByRole("button", { name: "Akode.DocxGen" }));
+
+    await waitFor(() => {
+      expect(mockedOpenLogFolder).toHaveBeenCalledOnce();
+      expect(mockedOpenProjectPage).toHaveBeenCalledWith("engine");
+    });
   });
 });

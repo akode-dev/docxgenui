@@ -13,7 +13,7 @@ React + TypeScript
   └─ invokes one typed Tauri command
        └─ Rust/Cargo desktop shell
             └─ starts a bundled .NET 10 sidecar for one operation
-                 └─ Akode.DocxGen 2.1.1
+                 └─ Akode.DocxGen 2.1.2
                       └─ reads/writes Markdown, JSON, DOCX, and image assets
 ```
 
@@ -32,6 +32,12 @@ operations: `health`, `inspect`, `convert`, `render`, and `extract`.
 The request is serialized as JSON, encoded with Base64URL, and sent as one
 process argument to avoid shell parsing. Tauri launches a fixed bundled binary
 name; the frontend cannot supply a program or arbitrary arguments.
+
+The shell also writes a bounded local JSON-lines diagnostic log. Entries
+contain only the operation, timing, success state, error code, and diagnostic
+codes. Requests, document contents, names, paths, and backend messages are
+never logged. The UI can open the resolved platform log directory through a
+fixed native command.
 
 ### Backend (`backend`)
 
@@ -56,6 +62,8 @@ The backend supports:
 - Remote images and raw HTML remain disabled in the document engine.
 - Existing files are protected unless overwrite is explicitly selected.
 - User-facing failures report paths and diagnostics, not document contents.
+- Rotating operational logs omit document data and retain at most two 1 MB
+  files.
 
 ## Packaging
 
