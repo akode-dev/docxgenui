@@ -10,6 +10,8 @@ DOCX back into portable Markdown with its embedded images. Files are processed
 on the computer: there is no account, web service, Office installation, or
 document upload.
 
+![UI](docs/images/ui.png)
+
 ## What it does
 
 - **Markdown → Word:** create a standalone DOCX, optionally using another DOCX
