@@ -2,6 +2,13 @@
 
 All notable changes to DocxGen UI are documented here.
 
+## [0.1.2] - 2026-07-25
+
+### Fixed
+
+- Installed `xdg-utils` in Linux release jobs so the ARM64 AppImage bundler
+  always has the required `xdg-open` helper.
+
 ## [0.1.1] - 2026-07-25
 
 ### Fixed
