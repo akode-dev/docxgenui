@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/backend/">
+    <Project Path="backend/DocxGen.Ui.Backend/DocxGen.Ui.Backend.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DocxGen.Ui.Backend.Tests/DocxGen.Ui.Backend.Tests.csproj" />
+  </Folder>
+</Solution>

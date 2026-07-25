@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "DocxGen UI",
+  "version": "0.1.0",
+  "identifier": "eu.akode.docxgenui",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; frame-src 'none'; base-uri 'none'"
+    },
+    "windows": [
+      {
+        "title": "DocxGen UI",
+        "label": "main",
+        "width": 1120,
+        "height": 760,
+        "minWidth": 860,
+        "minHeight": 640,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "copyright": "Copyright © 2026 Akode",
+    "shortDescription": "Markdown and Word, in both directions",
+    "longDescription": "A local-first desktop application for converting Markdown to Word documents and extracting Word documents back to Markdown.",
+    "externalBin": [
+      "binaries/docxgen-ui-backend"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "linux": {
+      "appimage": {
+        "bundleMediaFramework": false
+      },
+      "deb": {
+        "depends": []
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "12.0"
+    },
+    "windows": {
+      "wix": {
+        "language": "en-US"
+      }
+    }
+  }
+}

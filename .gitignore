@@ -1,0 +1,39 @@
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+.vs/
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Rust / Tauri
+src-tauri/target/
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
+
+# Generated artifacts
+artifacts/
+release/
+
+# Local tools and editors
+.idea/
+.vscode/
+.claude/
+.codex/
+.DS_Store
+Thumbs.db
+
+# Environment and signing material
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.cer
+*.key
+*.mobileprovision
