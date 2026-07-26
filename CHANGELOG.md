@@ -4,6 +4,8 @@ All notable changes to DocxGen UI are documented here.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-26
+
 ### Changed
 
 - Refreshed the README screenshot to show the current desktop interface.
