@@ -13,7 +13,7 @@ React + TypeScript
   └─ invokes one typed Tauri command
        └─ Rust/Cargo desktop shell
             └─ starts a bundled .NET 10 sidecar for one operation
-                 └─ Akode.DocxGen 2.1.2
+                 └─ Akode.DocxGen 2.1.3
                       └─ reads/writes Markdown, JSON, DOCX, and image assets
 ```
 
@@ -50,6 +50,7 @@ The backend supports:
 
 - quick Markdown-to-DOCX conversion with an optional style reference;
 - placeholder-template rendering with Markdown and an optional JSON model;
+- lenient optional-field rendering or explicit strict placeholder enforcement;
 - deterministic template inspection;
 - semantic DOCX-to-Markdown extraction with embedded image assets.
 
@@ -62,8 +63,8 @@ The backend supports:
 - Remote images and raw HTML remain disabled in the document engine.
 - Existing files are protected unless overwrite is explicitly selected.
 - User-facing failures report paths and diagnostics, not document contents.
-- Rotating operational logs omit document data and retain at most two 1 MB
-  files.
+- Rotating operational logs omit document data and retain at most two files of
+  no more than about 1 MB each.
 
 ## Packaging
 

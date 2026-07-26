@@ -185,25 +185,26 @@ fn append_log(app: &AppHandle, entry: &OperationLog) -> Result<(), String> {
         .lock()
         .map_err(|_| "The application log lock is unavailable.".to_owned())?;
     let path = log_path(app)?;
-    rotate_log_if_needed(&path)?;
+    let mut encoded = serde_json::to_vec(entry)
+        .map_err(|error| format!("Could not serialize the application log entry: {error}"))?;
+    encoded.push(b'\n');
+    rotate_log_if_needed(&path, encoded.len() as u64)?;
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
         .open(&path)
         .map_err(|error| format!("Could not open the application log: {error}"))?;
-    serde_json::to_writer(&mut file, entry)
-        .map_err(|error| format!("Could not serialize the application log entry: {error}"))?;
-    file.write_all(b"\n")
+    file.write_all(&encoded)
         .map_err(|error| format!("Could not write the application log: {error}"))
 }
 
-fn rotate_log_if_needed(path: &PathBuf) -> Result<(), String> {
+fn rotate_log_if_needed(path: &PathBuf, incoming_bytes: u64) -> Result<(), String> {
     let size = match fs::metadata(path) {
         Ok(metadata) => metadata.len(),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
         Err(error) => return Err(format!("Could not inspect the application log: {error}")),
     };
-    if size < MAX_LOG_BYTES {
+    if size.saturating_add(incoming_bytes) <= MAX_LOG_BYTES {
         return Ok(());
     }
 
@@ -305,7 +306,7 @@ mod tests {
         let current = directory.join(LOG_FILE_NAME);
         fs::write(&current, vec![b'x'; MAX_LOG_BYTES as usize]).expect("write isolated test log");
 
-        rotate_log_if_needed(&current).expect("rotate full test log");
+        rotate_log_if_needed(&current, 1).expect("rotate full test log");
 
         assert!(!current.exists());
         let previous = directory.join(PREVIOUS_LOG_FILE_NAME);

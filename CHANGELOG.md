@@ -2,6 +2,31 @@
 
 All notable changes to DocxGen UI are documented here.
 
+## [0.1.3] - 2026-07-26
+
+### Added
+
+- In-app template field guide for scalar, Markdown, image, and collection
+  placeholders.
+- Optional referenced-files folder for `$mdFile`, `$file`, and local Markdown
+  images.
+- Explicit template strictness option; intentionally empty optional fields are
+  removed by default.
+
+### Changed
+
+- Replaced the promotional hero copy with a direct description of the three
+  document workflows.
+- Grouped repeated diagnostics by code and added plain-language explanations
+  for expected DOCX-to-Markdown semantic warnings.
+- Capped active log files before each write, retaining at most about 2 MB.
+
+### Fixed
+
+- Updated the bundled engine to Akode.DocxGen 2.1.3 so task lists render and
+  real-world style references with Word numbering cleanup metadata remain
+  valid.
+
 ## [0.1.2] - 2026-07-25
 
 ### Fixed

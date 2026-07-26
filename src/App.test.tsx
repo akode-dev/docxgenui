@@ -48,7 +48,7 @@ describe("App", () => {
       diagnostics: [],
       data: {
         backendVersion: "0.1.1",
-        docxGenVersion: "2.1.2",
+        docxGenVersion: "2.1.3",
         runtime: ".NET 10",
         operatingSystem: "Test",
       },
@@ -72,7 +72,7 @@ describe("App", () => {
     ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText("Core 2.1.2")).toBeInTheDocument();
+      expect(screen.getByText("Core 2.1.3")).toBeInTheDocument();
     });
   });
 
@@ -103,5 +103,24 @@ describe("App", () => {
       expect(mockedOpenLogFolder).toHaveBeenCalledOnce();
       expect(mockedOpenProjectPage).toHaveBeenCalledWith("engine");
     });
+  });
+
+  it("explains template placeholders without leaving the workflow", () => {
+    render(<App />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Template document/u }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Template field guide" }),
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "What to put in a Word template" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("{{ds.Body}:MD}")).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/Require every template placeholder/u),
+    ).not.toHaveLength(0);
   });
 });

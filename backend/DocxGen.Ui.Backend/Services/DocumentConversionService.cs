@@ -190,7 +190,7 @@ public sealed class DocumentConversionService
         var options = new RenderOptions
         {
             Culture = "en-US",
-            Strict = true,
+            Strict = payload.Strict,
             HeadingOffset = payload.HeadingOffset,
             AllowRawHtml = false,
             AllowRemoteImages = false,
