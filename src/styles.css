@@ -611,6 +611,81 @@ input:disabled {
   font-size: 11px;
 }
 
+.template-readiness {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f8faf8;
+}
+
+.readiness-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--forest);
+  background: #e7efea;
+}
+
+.readiness-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.readiness-copy strong {
+  font-size: 11px;
+}
+
+.readiness-copy span,
+.readiness-copy small {
+  color: var(--muted);
+  font-size: 9.5px;
+  line-height: 1.45;
+}
+
+.readiness-copy small {
+  overflow: hidden;
+  color: #5d4b31;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.readiness-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.readiness-working .readiness-icon {
+  color: #85652b;
+  background: #fbf2df;
+}
+
+.readiness-ready {
+  border-color: #bdd8c7;
+  background: #f2f8f4;
+}
+
+.readiness-ready .readiness-icon {
+  color: #287d4c;
+  background: #dff1e5;
+}
+
+.readiness-error {
+  border-color: #e4c2b9;
+  background: #fcf5f2;
+}
+
+.readiness-error .readiness-icon {
+  color: #a64b38;
+  background: #f7e5e0;
+}
+
 .selected-directory {
   color: var(--ink);
 }
@@ -1012,11 +1087,8 @@ input:disabled {
 
 @media (max-width: 900px) {
   .app-header {
-    grid-template-columns: 1fr auto;
-  }
-
-  .privacy-note {
-    display: none;
+    grid-template-columns: 1fr auto auto;
+    gap: 16px;
   }
 
   .hero {
@@ -1044,7 +1116,12 @@ input:disabled {
 
 @media (max-width: 680px) {
   .app-header {
+    grid-template-columns: 1fr auto;
     padding: 0 18px;
+  }
+
+  .runtime-pill {
+    display: none;
   }
 
   .app-main {
@@ -1092,6 +1169,18 @@ input:disabled {
   }
 
   .file-picker-actions .secondary-button {
+    flex: 1;
+  }
+
+  .template-readiness {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .readiness-actions {
+    grid-column: 1 / -1;
+  }
+
+  .readiness-actions .secondary-button {
     flex: 1;
   }
 

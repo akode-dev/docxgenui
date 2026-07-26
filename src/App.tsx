@@ -16,6 +16,7 @@ import {
 import { FilePicker } from "./components/FilePicker";
 import { StatusPanel, type LocalStatus } from "./components/StatusPanel";
 import { TemplateHelpDialog } from "./components/TemplateHelpDialog";
+import { TemplateReadiness } from "./components/TemplateReadiness";
 import { TemplateSummary } from "./components/TemplateSummary";
 import {
   getLogInfo,
@@ -36,7 +37,9 @@ import type {
   HealthData,
   InspectionData,
   LogInfo,
+  PreflightData,
   RenderData,
+  ScaffoldData,
   SelectedFile,
 } from "./types";
 
@@ -81,6 +84,12 @@ function App() {
   const [headingOffset, setHeadingOffset] = useState(0);
   const [strictTemplate, setStrictTemplate] = useState(false);
   const [showTemplateHelp, setShowTemplateHelp] = useState(false);
+  const [templatePreflight, setTemplatePreflight] =
+    useState<BackendResponse<PreflightData> | null>(null);
+  const [preflightBusy, setPreflightBusy] = useState(false);
+  const [preflightBridgeError, setPreflightBridgeError] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     let active = true;
@@ -116,18 +125,81 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (
+      workspace !== "create" ||
+      createMode !== "template" ||
+      !template ||
+      !inspection ||
+      (!markdown && !model)
+    ) {
+      return;
+    }
+
+    let active = true;
+    setPreflightBusy(true);
+    setPreflightBridgeError(null);
+    void runBackend<PreflightData>("preflight", {
+      templatePath: template.path,
+      markdownPath: markdown?.path ?? null,
+      modelPath: model?.path ?? null,
+      assetsRoot: templateAssetsRoot,
+      headingOffset,
+      strict: strictTemplate,
+    })
+      .then((response) => {
+        if (active) {
+          setTemplatePreflight(response);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setTemplatePreflight(null);
+          setPreflightBridgeError(bridgeErrorMessage(error));
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setPreflightBusy(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    createMode,
+    headingOffset,
+    inspection,
+    markdown,
+    model,
+    strictTemplate,
+    template,
+    templateAssetsRoot,
+    workspace,
+  ]);
+
   const actionLabel = useMemo(() => {
     if (workspace === "extract") {
       return "Extract Markdown";
     }
     return createMode === "quick" ? "Create Word document" : "Render template";
   }, [createMode, workspace]);
+  const templateInputBlocked =
+    workspace === "create" &&
+    createMode === "template" &&
+    Boolean(markdown || model) &&
+    (preflightBusy ||
+      Boolean(preflightBridgeError) ||
+      templatePreflight?.ok === false);
 
   async function chooseMarkdown() {
     const selected = await pickFile("Choose Markdown", markdownType);
     if (selected) {
       setMarkdown(selected);
       setWordOutput(null);
+      setTemplatePreflight(null);
+      setPreflightBridgeError(null);
       setStatus({
         kind: "idle",
         message: "Markdown selected. Choose an output path when ready.",
@@ -149,7 +221,11 @@ function App() {
     }
 
     setTemplate(selected);
+    setModel(null);
     setInspection(null);
+    setTemplatePreflight(null);
+    setPreflightBusy(false);
+    setPreflightBridgeError(null);
     setStatus({ kind: "working", message: "Inspecting template contract…" });
     try {
       const response = await runBackend<InspectionData>("inspect", {
@@ -172,6 +248,55 @@ function App() {
     const selected = await pickFile("Choose a JSON model", jsonType);
     if (selected) {
       setModel(selected);
+      setTemplatePreflight(null);
+      setPreflightBridgeError(null);
+    }
+  }
+
+  async function createModel() {
+    if (!template) {
+      setStatus({
+        kind: "error",
+        message: "Choose a Word template before creating its JSON model.",
+        hint: "Load the document template in step 1.",
+      });
+      return;
+    }
+
+    const selected = await pickOutput(
+      "Create editable JSON model",
+      jsonType,
+      suggestedOutput(template, "model.json"),
+    );
+    if (!selected) {
+      return;
+    }
+
+    setBusy(true);
+    setStatus({
+      kind: "working",
+      message: "Creating an editable model from the template…",
+    });
+    try {
+      const response = await runBackend<ScaffoldData>("scaffold", {
+        templatePath: template.path,
+        outputPath: selected.path,
+        overwrite,
+      });
+      setStatus({ kind: "result", result: response });
+      if (response.ok) {
+        setModel(selected);
+        setTemplatePreflight(null);
+        setPreflightBridgeError(null);
+      }
+    } catch (error: unknown) {
+      setStatus({
+        kind: "error",
+        message: "The JSON model could not be created.",
+        hint: bridgeErrorMessage(error),
+      });
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -305,6 +430,12 @@ function App() {
       }
       if (!markdown && !model) {
         return "Add Markdown, a JSON model, or both for the template.";
+      }
+      if (preflightBusy) {
+        return "Wait for the template input check to finish.";
+      }
+      if (preflightBridgeError || templatePreflight?.ok === false) {
+        return "Resolve the reported template input issues before rendering.";
       }
     }
     if (!wordOutput) {
@@ -465,7 +596,12 @@ function App() {
                         acceptLabel="Choose Markdown"
                         disabled={busy}
                         onPick={chooseMarkdown}
-                        onClear={() => setMarkdown(null)}
+                        onClear={() => {
+                          setMarkdown(null);
+                          setTemplatePreflight(null);
+                          setPreflightBusy(false);
+                          setPreflightBridgeError(null);
+                        }}
                       />
                     ) : (
                       <>
@@ -479,6 +615,9 @@ function App() {
                           onClear={() => {
                             setTemplate(null);
                             setInspection(null);
+                            setTemplatePreflight(null);
+                            setPreflightBusy(false);
+                            setPreflightBridgeError(null);
                           }}
                         />
                         {inspection ? (
@@ -542,7 +681,12 @@ function App() {
                           optional
                           disabled={busy}
                           onPick={chooseMarkdown}
-                          onClear={() => setMarkdown(null)}
+                          onClear={() => {
+                            setMarkdown(null);
+                            setTemplatePreflight(null);
+                            setPreflightBusy(false);
+                            setPreflightBridgeError(null);
+                          }}
                         />
                         <FilePicker
                           label="JSON model"
@@ -552,7 +696,12 @@ function App() {
                           optional
                           disabled={busy}
                           onPick={chooseModel}
-                          onClear={() => setModel(null)}
+                          onClear={() => {
+                            setModel(null);
+                            setTemplatePreflight(null);
+                            setPreflightBusy(false);
+                            setPreflightBridgeError(null);
+                          }}
                         />
                         <div className="directory-picker">
                           <div className="file-picker-icon" aria-hidden="true">
@@ -604,6 +753,20 @@ function App() {
                             Do not also define <code>data.ds.Body</code> in JSON:
                             an explicit JSON value takes precedence.
                           </div>
+                        ) : null}
+                        {inspection ? (
+                          <TemplateReadiness
+                            inspection={inspection}
+                            response={
+                              markdown || model ? templatePreflight : null
+                            }
+                            busy={preflightBusy}
+                            bridgeError={preflightBridgeError}
+                            hasInputs={Boolean(markdown || model)}
+                            disabled={busy}
+                            onChooseModel={() => void chooseModel()}
+                            onCreateModel={() => void createModel()}
+                          />
                         ) : null}
                       </div>
                     )}
@@ -781,8 +944,8 @@ function App() {
                         <span>
                           <strong>Require every template placeholder</strong>
                           <small>
-                            Leave off to remove intentionally empty optional
-                            fields
+                            When off, only fields explicitly required by the
+                            template schema are mandatory
                           </small>
                         </span>
                       </label>
@@ -824,7 +987,7 @@ function App() {
             <button
               className="primary-button"
               type="button"
-              disabled={busy}
+              disabled={busy || templateInputBlocked}
               onClick={() => void execute()}
             >
               {busy ? <RefreshCw className="spin" size={19} /> : null}

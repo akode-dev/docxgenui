@@ -90,8 +90,11 @@ export function StatusPanel({ status, onOpenLogs }: StatusPanelProps) {
             </summary>
             {result.ok && warningCount > 0 ? (
               <span className="diagnostic-intro">
-                The output was created. Warnings describe content that Word and
-                Markdown represent differently.
+                {result.operation === "extract"
+                  ? "The output was created. Warnings describe content that Word and Markdown represent differently."
+                  : result.operation === "render"
+                    ? "The output was created. Warnings identify optional fields left empty or Word fields that update when opened."
+                    : "The output was created. Warnings identify omitted constructs or Word fields that update when opened."}
               </span>
             ) : null}
             <ul className="diagnostic-list">
@@ -185,7 +188,7 @@ function groupDiagnostics(
           : (friendlySummaries[code] ?? first.message),
       hint:
         code === "E-MDL-003"
-          ? "Add the listed values, or mark intentionally empty fields optional and turn off “Require every template placeholder”."
+          ? "Add the listed values in the JSON model. Schema-required fields remain mandatory; turn strict mode off only to leave optional placeholders empty."
           : first.hint,
       paths,
     };

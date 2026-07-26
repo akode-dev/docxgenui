@@ -38,6 +38,16 @@ public sealed class BackendDispatcher(DocumentConversionService service)
                         envelope.Payload,
                         BackendJsonContext.Default.RenderTemplatePayload),
                     cancellationToken).ConfigureAwait(false),
+                "preflight" => await service.PreflightAsync(
+                    Deserialize(
+                        envelope.Payload,
+                        BackendJsonContext.Default.PreflightTemplatePayload),
+                    cancellationToken).ConfigureAwait(false),
+                "scaffold" => await service.ScaffoldAsync(
+                    Deserialize(
+                        envelope.Payload,
+                        BackendJsonContext.Default.ScaffoldModelPayload),
+                    cancellationToken).ConfigureAwait(false),
                 "extract" => await service.ExtractAsync(
                     Deserialize(
                         envelope.Payload,

@@ -26,8 +26,9 @@ official Tauri dialog plugin.
 ### Native shell (`src-tauri`)
 
 Tauri owns the application window, bundle metadata, capabilities, and the
-sidecar boundary. A single command, `run_backend`, accepts only five explicit
-operations: `health`, `inspect`, `convert`, `render`, and `extract`.
+sidecar boundary. A single command, `run_backend`, accepts only seven explicit
+operations: `health`, `inspect`, `convert`, `render`, `preflight`, `scaffold`,
+and `extract`.
 
 The request is serialized as JSON, encoded with Base64URL, and sent as one
 process argument to avoid shell parsing. Tauri launches a fixed bundled binary
@@ -50,6 +51,8 @@ The backend supports:
 
 - quick Markdown-to-DOCX conversion with an optional style reference;
 - placeholder-template rendering with Markdown and an optional JSON model;
+- dry-run validation of selected template inputs before rendering;
+- editable JSON model scaffolding from template placeholders;
 - lenient optional-field rendering or explicit strict placeholder enforcement;
 - deterministic template inspection;
 - semantic DOCX-to-Markdown extraction with embedded image assets.

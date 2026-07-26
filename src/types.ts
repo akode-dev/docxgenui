@@ -1,4 +1,11 @@
-export type Operation = "health" | "inspect" | "convert" | "render" | "extract";
+export type Operation =
+  | "health"
+  | "inspect"
+  | "convert"
+  | "render"
+  | "preflight"
+  | "scaffold"
+  | "extract";
 
 export interface BackendDiagnostic {
   code: string;
@@ -58,6 +65,16 @@ export interface RenderData extends ConversionData {
   templateHash: string;
   boundPaths: string[];
   unboundPaths: string[];
+}
+
+export interface PreflightData {
+  templateHash: string;
+  boundPaths: string[];
+  unboundPaths: string[];
+}
+
+export interface ScaffoldData {
+  templateHash: string;
 }
 
 export interface ExtractionData {

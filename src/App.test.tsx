@@ -58,6 +58,7 @@ describe("App", () => {
   it("presents the two conversion directions and runtime status", async () => {
     render(<App />);
 
+    expect(screen.getByText("Local & private")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Markdown → Word/u }),
     ).toBeInTheDocument();

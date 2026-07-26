@@ -52,7 +52,7 @@ export function toSelectedFile(path: string): SelectedFile {
 
 export function suggestedOutput(
   source: SelectedFile | null,
-  extension: "docx" | "md",
+  extension: "docx" | "md" | "model.json",
 ): string | undefined {
   if (source === null) {
     return undefined;

@@ -2,6 +2,24 @@
 
 All notable changes to DocxGen UI are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Automatic dry-run preflight for template inputs, with missing required fields
+  shown before rendering and the final action disabled until errors are fixed.
+- One-click creation of an editable JSON model scaffold from the selected DOCX
+  template.
+
+### Changed
+
+- Clarified that adjacent-schema requirements remain mandatory while strict
+  mode controls only otherwise optional placeholders.
+- Kept the `Local & private` indicator visible in the sticky header at every
+  supported window width.
+- Summarized missing-field failures at the operation level instead of showing
+  only the first missing path.
+
 ## [0.1.3] - 2026-07-26
 
 ### Added

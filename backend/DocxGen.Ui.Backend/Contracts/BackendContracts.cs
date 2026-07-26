@@ -102,6 +102,19 @@ public sealed record RenderTemplatePayload(
     bool ValidateOutput,
     bool Overwrite);
 
+public sealed record PreflightTemplatePayload(
+    string TemplatePath,
+    string? MarkdownPath,
+    string? ModelPath,
+    string? AssetsRoot,
+    int HeadingOffset,
+    bool Strict);
+
+public sealed record ScaffoldModelPayload(
+    string TemplatePath,
+    string OutputPath,
+    bool Overwrite);
+
 public sealed record ExtractMarkdownPayload(
     string DocumentPath,
     string OutputPath,
@@ -159,6 +172,14 @@ public sealed record RenderData(
     int CodeBlocks,
     bool Validated);
 
+public sealed record PreflightData(
+    string TemplateHash,
+    IReadOnlyList<string> BoundPaths,
+    IReadOnlyList<string> UnboundPaths);
+
+public sealed record ScaffoldData(
+    string TemplateHash);
+
 public sealed record ExtractionData(
     string AssetsDirectory,
     int Paragraphs,
@@ -176,6 +197,8 @@ public sealed record ExtractionData(
 [JsonSerializable(typeof(InspectTemplatePayload))]
 [JsonSerializable(typeof(ConvertMarkdownPayload))]
 [JsonSerializable(typeof(RenderTemplatePayload))]
+[JsonSerializable(typeof(PreflightTemplatePayload))]
+[JsonSerializable(typeof(ScaffoldModelPayload))]
 [JsonSerializable(typeof(ExtractMarkdownPayload))]
 [JsonSerializable(typeof(BackendDiagnostic))]
 [JsonSerializable(typeof(HealthData))]
@@ -183,5 +206,7 @@ public sealed record ExtractionData(
 [JsonSerializable(typeof(PlaceholderData))]
 [JsonSerializable(typeof(ConversionData))]
 [JsonSerializable(typeof(RenderData))]
+[JsonSerializable(typeof(PreflightData))]
+[JsonSerializable(typeof(ScaffoldData))]
 [JsonSerializable(typeof(ExtractionData))]
 public sealed partial class BackendJsonContext : JsonSerializerContext;
