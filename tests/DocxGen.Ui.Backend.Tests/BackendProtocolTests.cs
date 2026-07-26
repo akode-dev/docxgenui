@@ -16,6 +16,8 @@ public sealed class BackendProtocolTests
             new InspectionData("hash", null, null, [], [], []),
             new ConversionData(1, 2, 3, 4, 5, true),
             new RenderData("hash", [], [], 1, 2, 3, 4, 5, true),
+            new PreflightData("hash", [], []),
+            new ScaffoldData("hash"),
             new ExtractionData("assets", 1, 2, 3, 4, 5),
         ];
 

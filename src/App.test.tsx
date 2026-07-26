@@ -48,7 +48,7 @@ describe("App", () => {
       diagnostics: [],
       data: {
         backendVersion: "0.1.1",
-        docxGenVersion: "2.1.3",
+        docxGenVersion: "2.2.0",
         runtime: ".NET 10",
         operatingSystem: "Test",
       },
@@ -58,6 +58,7 @@ describe("App", () => {
   it("presents the two conversion directions and runtime status", async () => {
     render(<App />);
 
+    expect(screen.getByText("Local & private")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Markdown → Word/u }),
     ).toBeInTheDocument();
@@ -72,7 +73,7 @@ describe("App", () => {
     ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText("Core 2.1.3")).toBeInTheDocument();
+      expect(screen.getByText("Core 2.2.0")).toBeInTheDocument();
     });
   });
 

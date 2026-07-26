@@ -89,3 +89,37 @@ it("groups repeated extraction warnings and explains that output was created", (
     screen.getByText(/The output was created/u),
   ).toBeInTheDocument();
 });
+
+it("explains optional template-field warnings after a successful render", () => {
+  render(
+    <StatusPanel
+      onOpenLogs={vi.fn()}
+      status={{
+        kind: "result",
+        result: {
+          ok: true,
+          operation: "render",
+          message: "Template-based Word document created.",
+          hint: null,
+          errorCode: null,
+          outputPath: "document.docx",
+          durationMilliseconds: 400,
+          diagnostics: [
+            {
+              code: "W-MDL-007",
+              severity: "warning",
+              message: "Optional field was removed.",
+              hint: "No action is required.",
+              path: "/data/ds/Document/Title",
+            },
+          ],
+          data: null,
+        },
+      }}
+    />,
+  );
+
+  expect(
+    screen.getByText(/optional fields left empty/u),
+  ).toBeInTheDocument();
+});
