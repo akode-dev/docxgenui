@@ -6,6 +6,7 @@ import {
   ChevronRight,
   FileText,
   FolderOpen,
+  HelpCircle,
   Layers3,
   LockKeyhole,
   RefreshCw,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { FilePicker } from "./components/FilePicker";
 import { StatusPanel, type LocalStatus } from "./components/StatusPanel";
+import { TemplateHelpDialog } from "./components/TemplateHelpDialog";
 import { TemplateSummary } from "./components/TemplateSummary";
 import {
   getLogInfo,
@@ -69,11 +71,16 @@ function App() {
   const [markdownOutput, setMarkdownOutput] =
     useState<SelectedFile | null>(null);
   const [assetsDirectory, setAssetsDirectory] = useState<string | null>(null);
+  const [templateAssetsRoot, setTemplateAssetsRoot] = useState<string | null>(
+    null,
+  );
 
   const [includeToc, setIncludeToc] = useState(false);
   const [validateOutput, setValidateOutput] = useState(true);
   const [overwrite, setOverwrite] = useState(false);
   const [headingOffset, setHeadingOffset] = useState(0);
+  const [strictTemplate, setStrictTemplate] = useState(false);
+  const [showTemplateHelp, setShowTemplateHelp] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -205,6 +212,15 @@ function App() {
     }
   }
 
+  async function chooseTemplateAssetsRoot() {
+    const selected = await pickDirectory(
+      "Choose the folder containing referenced Markdown and images",
+    );
+    if (selected) {
+      setTemplateAssetsRoot(selected);
+    }
+  }
+
   async function execute() {
     const validationError = validateForm();
     if (validationError) {
@@ -250,8 +266,9 @@ function App() {
           markdownPath: markdown?.path ?? null,
           modelPath: model?.path ?? null,
           outputPath: wordOutput!.path,
-          assetsRoot: null,
+          assetsRoot: templateAssetsRoot,
           headingOffset,
+          strict: strictTemplate,
           validateOutput,
           overwrite,
         });
@@ -356,17 +373,15 @@ function App() {
       <main className="app-main">
         <section className="hero">
           <div>
-            <span className="eyebrow">Document conversion, without the fuss</span>
+            <span className="eyebrow">Local document conversion</span>
             <h1>
-              Markdown and Word,
-              <br />
-              <em>beautifully in sync.</em>
+              Convert Markdown and Word documents.
             </h1>
           </div>
           <p>
-            Turn structured writing into polished documents, or bring an
-            existing DOCX back to editable Markdown. No Office installation,
-            cloud upload, or account required.
+            Create a DOCX from Markdown, fill a Word template, or extract
+            editable Markdown from an existing document. No Office
+            installation, upload, or account required.
           </p>
         </section>
 
@@ -494,6 +509,16 @@ function App() {
                             : "Plain Markdown fills ds.Body. JSON supplies cover fields, Document Control, collections, and other placeholders."}
                         </p>
                       </div>
+                      {createMode === "template" ? (
+                        <button
+                          className="help-button"
+                          type="button"
+                          onClick={() => setShowTemplateHelp(true)}
+                        >
+                          <HelpCircle size={16} />
+                          Template field guide
+                        </button>
+                      ) : null}
                     </div>
 
                     {createMode === "quick" ? (
@@ -521,7 +546,7 @@ function App() {
                         />
                         <FilePicker
                           label="JSON model"
-                          description="Structured values for all non-body placeholders"
+                          description="Structured values for template fields; omit ds.Body when Markdown is selected"
                           value={model}
                           acceptLabel="Choose model"
                           optional
@@ -529,6 +554,57 @@ function App() {
                           onPick={chooseModel}
                           onClear={() => setModel(null)}
                         />
+                        <div className="directory-picker">
+                          <div className="file-picker-icon" aria-hidden="true">
+                            <FolderOpen size={21} />
+                          </div>
+                          <div className="file-picker-copy">
+                            <div className="file-picker-title">
+                              <span>Referenced files folder</span>
+                              <span className="optional-badge">Optional</span>
+                            </div>
+                            <span
+                              className={
+                                templateAssetsRoot
+                                  ? "file-path selected-directory"
+                                  : "file-picker-description"
+                              }
+                              title={templateAssetsRoot ?? undefined}
+                            >
+                              {templateAssetsRoot ??
+                                "Used by $mdFile, $file, and local Markdown images"}
+                            </span>
+                          </div>
+                          <div className="file-picker-actions">
+                            {templateAssetsRoot ? (
+                              <button
+                                className="icon-button"
+                                type="button"
+                                aria-label="Clear referenced files folder"
+                                disabled={busy}
+                                onClick={() => setTemplateAssetsRoot(null)}
+                              >
+                                ×
+                              </button>
+                            ) : null}
+                            <button
+                              className="secondary-button compact"
+                              type="button"
+                              disabled={busy}
+                              onClick={() => void chooseTemplateAssetsRoot()}
+                            >
+                              <FolderOpen size={17} />
+                              {templateAssetsRoot ? "Change" : "Choose folder"}
+                            </button>
+                          </div>
+                        </div>
+                        {markdown && model ? (
+                          <div className="inline-advice">
+                            The selected Markdown supplies <code>ds.Body</code>.
+                            Do not also define <code>data.ds.Body</code> in JSON:
+                            an explicit JSON value takes precedence.
+                          </div>
+                        ) : null}
                       </div>
                     )}
                   </div>
@@ -692,7 +768,25 @@ function App() {
                           <small>Word updates it when the document opens</small>
                         </span>
                       </label>
-                    ) : null}
+                    ) : (
+                      <label className="check-option">
+                        <input
+                          type="checkbox"
+                          checked={strictTemplate}
+                          disabled={busy}
+                          onChange={(event) =>
+                            setStrictTemplate(event.target.checked)
+                          }
+                        />
+                        <span>
+                          <strong>Require every template placeholder</strong>
+                          <small>
+                            Leave off to remove intentionally empty optional
+                            fields
+                          </small>
+                        </span>
+                      </label>
+                    )}
                     <label className="check-option">
                       <input
                         type="checkbox"
@@ -770,6 +864,9 @@ function App() {
           <span>DOCX extraction preserves meaning, not page geometry.</span>
         </footer>
       </main>
+      {showTemplateHelp ? (
+        <TemplateHelpDialog onClose={() => setShowTemplateHelp(false)} />
+      ) : null}
     </div>
   );
 }
