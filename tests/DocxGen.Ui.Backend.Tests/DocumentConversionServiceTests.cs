@@ -189,14 +189,108 @@ public sealed class DocumentConversionServiceTests
             diagnostic => diagnostic.Code == "E-SEC-003");
     }
 
+    [Fact]
+    public async Task PreflightReportsAllSchemaRequiredFieldsBeforeRendering()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var workspace = new TemporaryWorkspace();
+        var templatePath = workspace.PathFor("required.docx");
+        var markdownPath = workspace.PathFor("body.md");
+        CreateTemplate(
+            templatePath,
+            "{{ds.Document.Title}}",
+            "{{ds.Body}:MD}");
+        await File.WriteAllTextAsync(
+            Path.ChangeExtension(templatePath, ".schema.json"),
+            """
+            {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "required": ["ds"],
+                  "properties": {
+                    "ds": {
+                      "type": "object",
+                      "required": ["Document"],
+                      "properties": {
+                        "Document": {
+                          "type": "object",
+                          "required": ["Title"],
+                          "properties": {
+                            "Title": { "type": "string", "minLength": 1 }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            """,
+            cancellationToken);
+        await File.WriteAllTextAsync(markdownPath, "# Body", cancellationToken);
+
+        var result = await new DocumentConversionService().PreflightAsync(
+            new PreflightTemplatePayload(
+                templatePath,
+                markdownPath,
+                ModelPath: null,
+                AssetsRoot: null,
+                HeadingOffset: 0,
+                Strict: false),
+            cancellationToken);
+
+        result.Ok.ShouldBeFalse();
+        result.ErrorCode.ShouldBe("E-MDL-003");
+        result.Message.ShouldBe("1 template field is required for this render.");
+        result.Diagnostics.ShouldContain(
+            diagnostic => diagnostic.Path == "/data/ds/Document/Title");
+        File.Exists(workspace.PathFor("output.docx")).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task ScaffoldCreatesAnEditableJsonModel()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var workspace = new TemporaryWorkspace();
+        var templatePath = workspace.PathFor("handbook.docx");
+        var modelPath = workspace.PathFor("handbook.model.json");
+        CreateTemplate(
+            templatePath,
+            "{{ds.Document.Title}}",
+            "{{ds.Body}:MD}");
+
+        var result = await new DocumentConversionService().ScaffoldAsync(
+            new ScaffoldModelPayload(
+                templatePath,
+                modelPath,
+                Overwrite: false),
+            cancellationToken);
+
+        result.Ok.ShouldBeTrue(result.Message);
+        File.Exists(modelPath).ShouldBeTrue();
+        var json = await File.ReadAllTextAsync(modelPath, cancellationToken);
+        json.ShouldContain("\"Document\"");
+        json.ShouldContain("\"Title\"");
+        json.ShouldContain("\"Body\"");
+    }
+
     private static void CreateTemplate(string path, string placeholder)
+    {
+        CreateTemplate(path, [placeholder]);
+    }
+
+    private static void CreateTemplate(string path, params string[] placeholders)
     {
         using var package = WordprocessingDocument.Create(
             path,
             WordprocessingDocumentType.Document);
         var main = package.AddMainDocumentPart();
         main.Document = new Document(
-            new Body(new Paragraph(new Run(new Text(placeholder)))));
+            new Body(
+                placeholders.Select(
+                    placeholder =>
+                        new Paragraph(new Run(new Text(placeholder))))));
         main.Document.Save();
     }
 

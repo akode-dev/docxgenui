@@ -30,7 +30,7 @@ never publish installers.
 
 ## Current signing status
 
-Version 0.1.0 is unsigned. Production code signing requires:
+Current public builds are unsigned. Production code signing requires:
 
 - a Windows Authenticode certificate;
 - Apple Developer ID Application signing and notarization credentials;

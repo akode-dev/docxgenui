@@ -162,23 +162,12 @@ public sealed class DocumentConversionService
         var timer = Stopwatch.StartNew();
         ValidateInputFile(payload.TemplatePath, ".docx", "template");
         ValidateOutputExtension(payload.OutputPath, ".docx");
-        if (payload.MarkdownPath is null && payload.ModelPath is null)
-        {
-            throw new ArgumentException(
-                "Template rendering requires a Markdown file, a JSON model, or both.");
-        }
-
-        if (payload.MarkdownPath is not null)
-        {
-            ValidateInputFile(payload.MarkdownPath, ".md", "Markdown");
-        }
-
-        if (payload.ModelPath is not null)
-        {
-            ValidateInputFile(payload.ModelPath, ".json", "model");
-        }
-
-        var assetsRoot = ResolveAssetsRoot(payload);
+        ValidateTemplateInputs(payload.MarkdownPath, payload.ModelPath);
+        var assetsRoot = ResolveAssetsRoot(
+            payload.AssetsRoot,
+            payload.MarkdownPath,
+            payload.ModelPath,
+            payload.TemplatePath);
         await using var template = OpenInput(payload.TemplatePath);
         await using var markdown = payload.MarkdownPath is null
             ? null
@@ -187,21 +176,9 @@ public sealed class DocumentConversionService
             ? null
             : OpenInput(payload.ModelPath);
 
-        var options = new RenderOptions
-        {
-            Culture = "en-US",
-            Strict = payload.Strict,
-            HeadingOffset = payload.HeadingOffset,
-            AllowRawHtml = false,
-            AllowRemoteImages = false,
-            UpdateFieldsOnOpen = true,
-            Overrides = RenderOptionOverrides.Culture
-                | RenderOptionOverrides.Strict
-                | RenderOptionOverrides.HeadingOffset
-                | RenderOptionOverrides.AllowRawHtml
-                | RenderOptionOverrides.AllowRemoteImages
-                | RenderOptionOverrides.UpdateFieldsOnOpen,
-        };
+        var options = CreateTemplateOptions(
+            payload.Strict,
+            payload.HeadingOffset);
         var result = await pipeline.RenderAsync(
                 new RenderRequest(
                     new InputArtifact(payload.TemplatePath, template),
@@ -256,6 +233,107 @@ public sealed class DocumentConversionService
                 result.MarkdownStats.Images,
                 result.MarkdownStats.CodeBlocks,
                 result.Validation?.IsValid ?? false));
+    }
+
+    public async Task<BackendResponse> PreflightAsync(
+        PreflightTemplatePayload payload,
+        CancellationToken cancellationToken)
+    {
+        var timer = Stopwatch.StartNew();
+        ValidateInputFile(payload.TemplatePath, ".docx", "template");
+        ValidateTemplateInputs(payload.MarkdownPath, payload.ModelPath);
+        var assetsRoot = ResolveAssetsRoot(
+            payload.AssetsRoot,
+            payload.MarkdownPath,
+            payload.ModelPath,
+            payload.TemplatePath);
+        await using var template = OpenInput(payload.TemplatePath);
+        await using var markdown = payload.MarkdownPath is null
+            ? null
+            : OpenInput(payload.MarkdownPath);
+        await using var model = payload.ModelPath is null
+            ? null
+            : OpenInput(payload.ModelPath);
+
+        var result = await pipeline.RenderAsync(
+                new RenderRequest(
+                    new InputArtifact(payload.TemplatePath, template),
+                    model is null
+                        ? null
+                        : new InputArtifact(payload.ModelPath!, model),
+                    markdown is null
+                        ? null
+                        : new InputArtifact(payload.MarkdownPath!, markdown),
+                    assetsRoot,
+                    CreateTemplateOptions(
+                        payload.Strict,
+                        payload.HeadingOffset),
+                    validateOutput: false,
+                    dryRun: true),
+                cancellationToken)
+            .ConfigureAwait(false);
+        result.Document?.Dispose();
+        timer.Stop();
+
+        return result.IsSuccess
+            ? BackendResponse.Success(
+                "preflight",
+                "Template inputs are ready.",
+                timer.ElapsedMilliseconds,
+                diagnostics: result.Diagnostics,
+                data: new PreflightData(
+                    result.TemplateHash,
+                    result.BoundPaths,
+                    result.UnboundPaths))
+            : FailureFromDiagnostics(
+                "preflight",
+                "Template inputs need attention.",
+                "Add the missing values or correct the reported model data.",
+                timer.ElapsedMilliseconds,
+                result.Diagnostics);
+    }
+
+    public async Task<BackendResponse> ScaffoldAsync(
+        ScaffoldModelPayload payload,
+        CancellationToken cancellationToken)
+    {
+        var timer = Stopwatch.StartNew();
+        ValidateInputFile(payload.TemplatePath, ".docx", "template");
+        ValidateOutputExtension(payload.OutputPath, ".json");
+        await using var template = OpenInput(payload.TemplatePath);
+        var result = await pipeline.ScaffoldModelAsync(
+                new ScaffoldModelRequest(
+                    new InputArtifact(payload.TemplatePath, template)),
+                cancellationToken)
+            .ConfigureAwait(false);
+        var errors = result.Diagnostics
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        if (errors.Length > 0)
+        {
+            timer.Stop();
+            return FailureFromDiagnostics(
+                "scaffold",
+                "The JSON model could not be created.",
+                "Repair the reported template issue and try again.",
+                timer.ElapsedMilliseconds,
+                result.Diagnostics);
+        }
+
+        await AtomicOutput.WriteTextAsync(
+                result.ModelJson,
+                payload.OutputPath,
+                payload.Overwrite,
+                cancellationToken)
+            .ConfigureAwait(false);
+        timer.Stop();
+        return BackendResponse.Success(
+            "scaffold",
+            "Editable JSON model created. Fill or remove empty fields before rendering.",
+            timer.ElapsedMilliseconds,
+            Path.GetFullPath(payload.OutputPath),
+            result.Diagnostics,
+            new ScaffoldData(result.TemplateHash));
     }
 
     public async Task<BackendResponse> ExtractAsync(
@@ -346,6 +424,21 @@ public sealed class DocumentConversionService
     {
         var firstError = diagnostics.FirstOrDefault(
             diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        var missingFields = diagnostics.Count(
+            diagnostic =>
+                diagnostic.Severity == DiagnosticSeverity.Error
+                && diagnostic.Code == DiagnosticCode.ModelUnboundPlaceholders);
+        if (missingFields > 0)
+        {
+            message =
+                $"{missingFields} template field{(missingFields == 1 ? " is" : "s are")} "
+                + "required for this render.";
+            hint =
+                "Choose or create a JSON model and add the listed values. "
+                + "Fields required by the template schema cannot be bypassed; "
+                + "turn strict mode off to leave only optional placeholders empty.";
+        }
+
         return BackendResponse.Failure(
             operation,
             firstError?.Code ?? "E-UI-OPERATION",
@@ -400,16 +493,60 @@ public sealed class DocumentConversionService
         }
     }
 
-    private static string ResolveAssetsRoot(RenderTemplatePayload payload)
+    private static void ValidateTemplateInputs(
+        string? markdownPath,
+        string? modelPath)
     {
-        if (!string.IsNullOrWhiteSpace(payload.AssetsRoot))
+        if (markdownPath is null && modelPath is null)
         {
-            return Path.GetFullPath(payload.AssetsRoot);
+            throw new ArgumentException(
+                "Template rendering requires a Markdown file, a JSON model, or both.");
         }
 
-        var source = payload.MarkdownPath
-            ?? payload.ModelPath
-            ?? payload.TemplatePath;
+        if (markdownPath is not null)
+        {
+            ValidateInputFile(markdownPath, ".md", "Markdown");
+        }
+
+        if (modelPath is not null)
+        {
+            ValidateInputFile(modelPath, ".json", "model");
+        }
+    }
+
+    private static RenderOptions CreateTemplateOptions(
+        bool strict,
+        int headingOffset) =>
+        new()
+        {
+            Culture = "en-US",
+            Strict = strict,
+            HeadingOffset = headingOffset,
+            AllowRawHtml = false,
+            AllowRemoteImages = false,
+            UpdateFieldsOnOpen = true,
+            Overrides = RenderOptionOverrides.Culture
+                | RenderOptionOverrides.Strict
+                | RenderOptionOverrides.HeadingOffset
+                | RenderOptionOverrides.AllowRawHtml
+                | RenderOptionOverrides.AllowRemoteImages
+                | RenderOptionOverrides.UpdateFieldsOnOpen,
+        };
+
+    private static string ResolveAssetsRoot(
+        string? explicitAssetsRoot,
+        string? markdownPath,
+        string? modelPath,
+        string templatePath)
+    {
+        if (!string.IsNullOrWhiteSpace(explicitAssetsRoot))
+        {
+            return Path.GetFullPath(explicitAssetsRoot);
+        }
+
+        var source = markdownPath
+            ?? modelPath
+            ?? templatePath;
         return Path.GetDirectoryName(Path.GetFullPath(source))
             ?? Environment.CurrentDirectory;
     }

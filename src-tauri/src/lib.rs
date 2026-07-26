@@ -12,7 +12,15 @@ use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::OpenerExt;
 use tauri_plugin_shell::ShellExt;
 
-const ALLOWED_OPERATIONS: [&str; 5] = ["health", "inspect", "convert", "render", "extract"];
+const ALLOWED_OPERATIONS: [&str; 7] = [
+    "health",
+    "inspect",
+    "convert",
+    "render",
+    "preflight",
+    "scaffold",
+    "extract",
+];
 const LOG_FILE_NAME: &str = "docxgen-ui.log";
 const PREVIOUS_LOG_FILE_NAME: &str = "docxgen-ui.previous.log";
 const MAX_LOG_BYTES: u64 = 1024 * 1024;
@@ -256,9 +264,11 @@ mod tests {
         operations.sort_unstable();
         operations.dedup();
 
-        assert_eq!(operations.len(), 5);
+        assert_eq!(operations.len(), 7);
         assert!(operations.contains(&"convert"));
         assert!(operations.contains(&"extract"));
+        assert!(operations.contains(&"preflight"));
+        assert!(operations.contains(&"scaffold"));
     }
 
     #[test]

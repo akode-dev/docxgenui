@@ -74,7 +74,11 @@ Design belongs in Word; content belongs in Markdown and JSON.
 4. In DocxGen UI, choose **Markdown → Word**, then **Template document**.
 5. Select the template and inspect its detected placeholders.
 6. Select a Markdown file and, when the template has other fields, a JSON model.
-7. Choose the output path and render.
+   Use **Create model from template** to save an editable scaffold when you do
+   not already have one.
+7. Review the automatic template-input check. Rendering remains disabled while
+   schema-required values or invalid model values are unresolved.
+8. Choose the output path and render.
 
 Example JSON model:
 
@@ -103,9 +107,13 @@ selected **Referenced files folder**.
 
 Unbound placeholders are removed when **Require every template placeholder**
 is off, unless an adjacent template schema marks the field as required. Turn
-the option on when every discovered placeholder must have a value. See the
+the option on when every discovered placeholder must have a value. Required
+schema fields cannot be bypassed by this switch. See the
 [DocxGen template authoring guide](https://github.com/akode-dev/docxgen/blob/main/docs/template-authoring-guide.md)
 for loops, conditions, tables, images, and template schema generation.
+
+The sticky application header always displays **Local & private** as a reminder
+that document processing stays on the current device.
 
 ## Development
 
