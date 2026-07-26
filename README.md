@@ -48,14 +48,15 @@ Rust, the .NET SDK, Microsoft Word, or LibreOffice.
 
 ## Diagnostics
 
-Every backend operation writes a small local JSON-lines log. Choose **Open
+Every backend operation writes a bounded local JSON-lines log. Choose **Open
 logs** in the application footer or next to an error to open its folder. The
 log records operation names, duration, success state, and diagnostic codes. It
 does not record document contents, file names, file paths, template data, or
 personal fields.
 
-The active log is `docxgen-ui.log`; after 1 MB it is rotated once to
-`docxgen-ui.previous.log`. Default locations are:
+The active log is `docxgen-ui.log`; before it would exceed 1 MB it is rotated
+once to `docxgen-ui.previous.log`. At most about 2 MB is retained. Default
+locations are:
 
 - Windows: `%LOCALAPPDATA%\eu.akode.docxgenui\logs`
 - macOS: `~/Library/Logs/eu.akode.docxgenui`
@@ -75,23 +76,34 @@ Design belongs in Word; content belongs in Markdown and JSON.
 6. Select a Markdown file and, when the template has other fields, a JSON model.
 7. Choose the output path and render.
 
-Example JSON:
+Example JSON model:
 
 ```json
 {
-  "ds": {
-    "Title": "Platform handbook",
-    "Description": "Operational guidance",
-    "Author": {
-      "FirstName": "Sample",
-      "LastName": "Author"
+  "modelVersion": "1.0",
+  "template": {
+    "id": "your-template",
+    "version": "1.0.0"
+  },
+  "data": {
+    "ds": {
+      "Document": {
+        "Title": "Platform handbook",
+        "Description": "Operational guidance"
+      }
     }
   }
 }
 ```
 
-The Markdown file supplies `ds.Body`; the JSON model supplies the remaining
-paths. See the
+The selected Markdown file supplies `ds.Body`; omit that path from JSON when
+both inputs are selected. JSON values take precedence when both sources define
+the same field. Directives such as `$mdFile` and `$file` resolve below the
+selected **Referenced files folder**.
+
+Unbound placeholders are removed when **Require every template placeholder**
+is off, unless an adjacent template schema marks the field as required. Turn
+the option on when every discovered placeholder must have a value. See the
 [DocxGen template authoring guide](https://github.com/akode-dev/docxgen/blob/main/docs/template-authoring-guide.md)
 for loops, conditions, tables, images, and template schema generation.
 

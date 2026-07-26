@@ -36,7 +36,10 @@ export function TemplateSummary({ inspection }: TemplateSummaryProps) {
             <div className="placeholder-chip" key={placeholder.path}>
               <Braces size={14} />
               <span>{placeholder.path}</span>
-              <small>{placeholder.kind}</small>
+              <small>
+                {placeholder.kind} ·{" "}
+                {placeholder.required ? "required" : "optional"}
+              </small>
             </div>
           ))}
           {inspection.placeholders.length > 8 ? (

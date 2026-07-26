@@ -98,6 +98,7 @@ public sealed record RenderTemplatePayload(
     string OutputPath,
     string? AssetsRoot,
     int HeadingOffset,
+    bool Strict,
     bool ValidateOutput,
     bool Overwrite);
 
