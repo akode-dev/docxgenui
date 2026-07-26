@@ -13,7 +13,7 @@ React + TypeScript
   └─ invokes one typed Tauri command
        └─ Rust/Cargo desktop shell
             └─ starts a bundled .NET 10 sidecar for one operation
-                 └─ Akode.DocxGen 2.1.3
+                 └─ Akode.DocxGen 2.2.0
                       └─ reads/writes Markdown, JSON, DOCX, and image assets
 ```
 

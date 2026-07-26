@@ -48,7 +48,7 @@ describe("App", () => {
       diagnostics: [],
       data: {
         backendVersion: "0.1.1",
-        docxGenVersion: "2.1.3",
+        docxGenVersion: "2.2.0",
         runtime: ".NET 10",
         operatingSystem: "Test",
       },
@@ -73,7 +73,7 @@ describe("App", () => {
     ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText("Core 2.1.3")).toBeInTheDocument();
+      expect(screen.getByText("Core 2.2.0")).toBeInTheDocument();
     });
   });
 
