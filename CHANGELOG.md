@@ -4,6 +4,18 @@ All notable changes to DocxGen UI are documented here.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-26
+
+### Changed
+
+- Refreshed the README screenshot to show the current desktop interface.
+
+### Fixed
+
+- Updated the bundled engine to Akode.DocxGen 2.2.1 so task-list checkboxes
+  render as the only Word list markers instead of appearing beside an extra
+  bullet or number.
+
 ## [0.2.0] - 2026-07-26
 
 ### Added

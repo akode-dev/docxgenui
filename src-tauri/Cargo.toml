@@ -1,6 +1,6 @@
 [package]
 name = "docxgen-ui"
-version = "0.2.0"
+version = "0.2.1"
 description = "Cross-platform desktop UI for DocxGen"
 authors = ["Akode"]
 license = "MIT"
