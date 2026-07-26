@@ -64,6 +64,60 @@ public sealed class DocumentConversionServiceTests
     }
 
     [Fact]
+    public async Task ConvertRendersTaskCheckboxesAsTheOnlyListMarkers()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var workspace = new TemporaryWorkspace();
+        var markdownPath = workspace.PathFor("tasks.md");
+        var documentPath = workspace.PathFor("tasks.docx");
+        await File.WriteAllTextAsync(
+            markdownPath,
+            """
+            - [x] Completed
+            - [ ] Pending
+            """,
+            cancellationToken);
+
+        var result = await new DocumentConversionService().ConvertAsync(
+            new ConvertMarkdownPayload(
+                markdownPath,
+                documentPath,
+                StyleReferencePath: null,
+                HeadingOffset: 0,
+                IncludeToc: false,
+                ValidateOutput: true,
+                Overwrite: false),
+            cancellationToken);
+
+        result.Ok.ShouldBeTrue(result.Message);
+        using var package = WordprocessingDocument.Open(documentPath, false);
+        var mainPart = package.MainDocumentPart
+            ?? throw new InvalidOperationException(
+                "The converted document must contain a main document part.");
+        var numbering = mainPart.NumberingDefinitionsPart?.Numbering
+            ?? throw new InvalidOperationException(
+                "The converted task list must contain numbering definitions.");
+        var document = mainPart.Document
+            ?? throw new InvalidOperationException(
+                "The converted main part must contain a document.");
+        var body = document.Body
+            ?? throw new InvalidOperationException(
+                "The converted document must contain a body.");
+        var taskParagraphs = body
+            .Elements<Paragraph>()
+            .Where(paragraph =>
+                paragraph.ParagraphProperties?.NumberingProperties is not null)
+            .ToArray();
+        taskParagraphs.Length.ShouldBe(2);
+        taskParagraphs[0].InnerText.ShouldBe("Completed");
+        taskParagraphs[1].InnerText.ShouldBe("Pending");
+        ResolveListMarker(numbering, taskParagraphs[0]).ShouldBe("☒");
+        ResolveListMarker(numbering, taskParagraphs[1]).ShouldBe("☐");
+        body.InnerText.ShouldNotContain("☒");
+        body.InnerText.ShouldNotContain("☐");
+    }
+
+    [Fact]
     public async Task ConvertDoesNotOverwriteByDefault()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -292,6 +346,27 @@ public sealed class DocumentConversionServiceTests
                     placeholder =>
                         new Paragraph(new Run(new Text(placeholder))))));
         main.Document.Save();
+    }
+
+    private static string? ResolveListMarker(
+        Numbering numbering,
+        Paragraph paragraph)
+    {
+        var properties = paragraph.ParagraphProperties?.NumberingProperties;
+        var numberId = properties?.NumberingId?.Val?.Value;
+        var level = properties?.NumberingLevelReference?.Val?.Value ?? 0;
+        var instance = numbering
+            .Elements<NumberingInstance>()
+            .Single(item => item.NumberID?.Value == numberId);
+        var abstractId = instance.AbstractNumId?.Val?.Value;
+        return numbering
+            .Elements<AbstractNum>()
+            .Single(item => item.AbstractNumberId?.Value == abstractId)
+            .Elements<Level>()
+            .Single(item => item.LevelIndex?.Value == level)
+            .LevelText?
+            .Val?
+            .Value;
     }
 
     private sealed class TemporaryWorkspace : IDisposable

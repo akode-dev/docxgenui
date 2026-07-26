@@ -23,8 +23,8 @@
       },
       "Akode.DocxGen.Core": {
         "type": "Transitive",
-        "resolved": "2.2.0",
-        "contentHash": "/5V5fsu/9Xb2irCX1gt5720ysLTGmvTuve3b2tzn/keAvYi+8NXpvQHc6NhFOw+lEA4bnzO+mwLjlK7atQSqdQ==",
+        "resolved": "2.2.1",
+        "contentHash": "NJ8oUuG8/LluktCR5llvQv1MC9J6ypGw8Ge5y5W1jKHKfFuvagP13YwgKRgLxpRNxwTtJQjkrEbF0WK2Ak6NVw==",
         "dependencies": {
           "JsonSchema.Net": "8.0.5",
           "Markdig": "1.3.2"
@@ -239,16 +239,16 @@
       "docxgen-ui-backend": {
         "type": "Project",
         "dependencies": {
-          "Akode.DocxGen": "[2.2.0, )"
+          "Akode.DocxGen": "[2.2.1, )"
         }
       },
       "Akode.DocxGen": {
         "type": "CentralTransitive",
-        "requested": "[2.2.0, )",
-        "resolved": "2.2.0",
-        "contentHash": "ej0Ys+6EzXTy+tzHaDnUiDoZHCU7/45/5drirVFLn5UhLBhTFoztPWGdQYr0O48hz0aQbYzjEKhmKua93NIDrA==",
+        "requested": "[2.2.1, )",
+        "resolved": "2.2.1",
+        "contentHash": "1aBOdM/K1tll1lVlOfzmfjgOvXLi4PSN74uaXaq5dneNjlTuDhANVeMUG8yKEHc3deh7RFS9jfORLrSp+MfWuw==",
         "dependencies": {
-          "Akode.DocxGen.Core": "2.2.0",
+          "Akode.DocxGen.Core": "2.2.1",
           "DocumentFormat.OpenXml": "3.5.1",
           "DocxTemplater": "2.8.3",
           "JsonSchema.Net": "8.0.5",
